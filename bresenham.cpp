@@ -5,7 +5,7 @@ void bresenham(int x1, int y1, int x2, int y2) {
     int dx, dy, p, x, y;
 
     /* Slope less than or equal to 1 */
-    if(( (y2 > y1) / (x2 - x1) ) <= 1) {
+    if(( (y2 - y1) / (x2 - x1) ) <= 1) {
         dx = x2 - x1;
         dy = y2 - y1;
 
@@ -70,13 +70,80 @@ void bresenham(int x1, int y1, int x2, int y2) {
     }
 
     /* Slope bigger than 1 */
-    if(( (y2 > y1) / (x2 - x1) ) > 1) {
-        //
+    if(( (y2 - y1) / (x2 - x1) ) > 1) {
+        int aux = x1;
+        x1 = y1;
+        y1 = aux;
+        aux = x2;
+        x2 = y2;
+        y2 = aux;
+
+        dx = x2 - x1;
+        dy = y2 - y1;
+
+        x = x1;
+        y = y1;
+
+        if (x2 >= x1 && y2 >= y1) {
+            p = 2 * dy - dx;
+            while (x <= x2) {
+                printf("21(%d,%d)\n", y, x);
+                x++;
+                if (p < 0) {
+                    p = p + 2 * dy;
+                } else {
+                    p = p + 2 * dy - 2 * dx;
+                    y++;
+                }
+            }
+        }
+
+        if (x2 >= x1 && y2 <= y1) {
+            p = 2 * dy + dx;
+            while (x <= x2) {
+                printf("22(%d,%d)\n", y, x);
+                x++;
+                if (p > 0) {
+                    p = p + 2 * dy;
+                } else {
+                    p = p + 2 * dy + 2 * dx;
+                    y--;
+                }
+            }
+        }
+
+        if (x2 <= x1 && y2 >= y1) {
+            p = - 2 * dy - dx;
+            while (x >= x2) {
+                printf("23(%d,%d)\n", y, x);
+                x--;
+                if (p > 0) {
+                    p = p - 2 * dy;
+                } else {
+                    p = p - 2 * dy - 2 * dx;
+                    y++;
+                }
+            }
+        }
+
+        if (x2 <= x1 && y2 <= y1) {
+            p = dx - 2 * dy;
+            while (x >= x2) {
+                printf("24(%d,%d)\n", y, x);
+                x--;
+                if (p < 0) {
+                    p = p - 2 * dy;
+                } else {
+                    p = p - 2 * dy + 2 * dx;
+                    y--;
+                }
+            }
+        }
     }
 }
 
 int main() {
-    int x1 = 7, y1 = 2, x2 = 2, y2 = 5;
+    int x1 = 1, y1 = 1, x2 = 3, y2 = 6;
     
     bresenham(x1, y1, x2, y2);
     return 0;
