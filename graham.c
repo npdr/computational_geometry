@@ -313,89 +313,191 @@ Bresenham algorithm for modifying O'Rourke's Graham scan
 void bresenham(tStack top, tPointi p1, tPointi p2) {
     int dx, dy, p, x, y;
 
-    /* Case zero */
-    //for vertical lines
-    
-    /* First case */
-    if(p2[X] >= p1[X] && p2[Y] >= p1[Y]) {
-        dx = p2[X] - p1[Y];
-        dy = p2[Y] - p1[Y];
+    /* Vertical line */
+    if(p1[X] == p2[X]) {
+        x = p1[X];
+        y = p1[Y];
+        tPointi point[X] = x;
+        tPointi point[Y] = y;
+        
 
-        tPointi point = p1;
-
-        p = 2 * dy - dx;
-
-        while (point[X] <= p2[X]) {
-            Push(point, top);
-            x++;
-            if (p < 0) {
-                p = p + 2 * dy;
-            } else {
-                p = p + 2 * dy - 2 * dx;
+        if(p2[Y] >= p1[Y]) {
+            while(y <= p2[Y]) {
+                printf("(%d,%d)\n", x, y);
                 y++;
             }
         }
+
+        if(p2[Y] < p1[Y])
+        while(y >= p2[Y]) {
+            printf("(%d,%d)\n", x, y);
+            y--;
+        }
+        return;
     }
 
-    /* Second case */
-    if(p2[X] >= p1[X] && p2[Y] <= p1[Y]) {
-        dx = p2[X] - p1[Y];
+    /* Slope less than or equal to 1 */
+    if(fabs( (p2[Y] - p1[Y]) / (p2[X] - p1[X]) ) <= 1) {
+        dx = p2[X] - p1[X];
         dy = p2[Y] - p1[Y];
 
-        tPointi point = p1;
+        x = p1[X];
+        y = p1[Y];
 
-        p = 2 * dy - dx;
+        if (p2[X] >= p1[X] && p2[Y] >= p1[Y]) {
+            tPointi point[X] = x;
+            tPointi point[Y] = y;
+            p = 2 * dy - dx;
+            while (x <= p2[X]) {
+                printf("(%d,%d)\n", x, y);
+                Push(point, top);
+                x++;
+                if (p < 0) {
+                    p = p + 2 * dy;
+                } else {
+                    p = p + 2 * dy - 2 * dx;
+                    y++;
+                }
+            }
+            return;
+        }
 
-        while (point[X] <= p2[X]) {
-            Push(point, top);
-            x++;
-            if (p < 0) {
-                p = p + 2 * dy;
-            } else {
-                p = p + 2 * dy - 2 * dx;
-                y++;
+        if (p2[X] >= p1[X] && p2[Y] <= p1[Y]) {
+            tPointi point[X] = x;
+            tPointi point[Y] = y;
+            p = 2 * dy + dx;
+            while (x <= p2[X]) {
+                printf("(%d,%d)\n", x, y);
+                Push(point, top);
+                x++;
+                if (p > 0) {
+                    p = p + 2 * dy;
+                } else {
+                    p = p + 2 * dy + 2 * dx;
+                    y--;
+                }
+            }
+            return;
+        }
+
+        if (p2[X] <= p1[X] && p2[Y] >= p1[Y]) {
+            tPointi point[X] = x;
+            tPointi point[Y] = y;
+            p = - 2 * dy - dx;
+            while (x >= p2[X]) {
+                printf("(%d,%d)\n", x, y);
+                Push(point, top);
+                x--;
+                if (p > 0) {
+                    p = p - 2 * dy;
+                } else {
+                    p = p - 2 * dy - 2 * dx;
+                    y++;
+                }
+            }
+            return;
+        }
+
+        if (p2[X] <= p1[X] && p2[Y] <= p1[Y]) {
+            tPointi point[X] = x;
+            tPointi point[Y] = y;
+            p = dx - 2 * dy;
+            while (x >= p2[X]) {
+                printf("(%d,%d)\n", x, y);
+                Push(point, top);
+                x--;
+                if (p < 0) {
+                    p = p - 2 * dy;
+                } else {
+                    p = p - 2 * dy + 2 * dx;
+                    y--;
+                }
+            }
+            return;
+        }
+        return;
+    }
+
+    /* Slope bigger than 1 */
+    if(fabs( (p2[Y] - p1[Y]) / (p2[X] - p1[X]) ) > 1) {
+        int aux = p1[X];
+        p1[X] = p1[Y];
+        p1[Y] = aux;
+        aux = p2[X];
+        p2[X] = p2[Y];
+        p2[Y] = aux;
+
+        dx = p2[X] - p1[X];
+        dy = p2[Y] - p1[Y];
+
+        x = p1[X];
+        y = p1[Y];
+
+        if (p2[X] >= p1[X] && p2[Y] >= p1[Y]) {
+            tPointi point[X] = x;
+            tPointi point[Y] = y;
+            p = 2 * dy - dx;
+            while (x <= p2[X]) {
+                printf("21(%d,%d)\n", y, x);
+                Push(point, top);
+                x++;
+                if (p < 0) {
+                    p = p + 2 * dy;
+                } else {
+                    p = p + 2 * dy - 2 * dx;
+                    y++;
+                }
             }
         }
-    }
 
-    /* Third case */
-    if(p2[X] <= p1[X] && p2[Y] >= p1[Y]) {
-        dx = p2[X] - p1[Y];
-        dy = p2[Y] - p1[Y];
-
-        tPointi point = p1;
-
-        p = 2 * dy - dx;
-
-        while (point[X] <= p2[X]) {
-            Push(point, top);
-            x++;
-            if (p < 0) {
-                p = p + 2 * dy;
-            } else {
-                p = p + 2 * dy - 2 * dx;
-                y++;
+        if (p2[X] >= p1[X] && p2[Y] <= p1[Y]) {
+            tPointi point[X] = x;
+            tPointi point[Y] = y;
+            p = 2 * dy + dx;
+            while (x <= p2[X]) {
+                printf("22(%d,%d)\n", y, x);
+                Push(point, top);
+                x++;
+                if (p > 0) {
+                    p = p + 2 * dy;
+                } else {
+                    p = p + 2 * dy + 2 * dx;
+                    y--;
+                }
             }
         }
-    }
 
-    /* Fourth case */
-    if(p2[X] <= p1[X] && p2[Y] <= p1[Y]) {
-        dx = p2[X] - p1[Y];
-        dy = p2[Y] - p1[Y];
+        if (p2[X] <= p1[X] && p2[Y] >= p1[Y]) {
+            tPointi point[X] = x;
+            tPointi point[Y] = y;
+            p = - 2 * dy - dx;
+            while (x >= p2[X]) {
+                printf("23(%d,%d)\n", y, x);
+                Push(point, top);
+                x--;
+                if (p > 0) {
+                    p = p - 2 * dy;
+                } else {
+                    p = p - 2 * dy - 2 * dx;
+                    y++;
+                }
+            }
+        }
 
-        tPointi point = p1;
-
-        p = 2 * dy - dx;
-
-        while (point[X] <= p2[X]) {
-            Push(point, top);
-            x++;
-            if (p < 0) {
-                p = p + 2 * dy;
-            } else {
-                p = p + 2 * dy - 2 * dx;
-                y++;
+        if (p2[X] <= p1[X] && p2[Y] <= p1[Y]) {
+            tPointi point[X] = x;
+            tPointi point[Y] = y;
+            p = dx - 2 * dy;
+            while (x >= p2[X]) {
+                printf("24(%d,%d)\n", y, x);
+                Push(point, top);
+                x--;
+                if (p < 0) {
+                    p = p - 2 * dy;
+                } else {
+                    p = p - 2 * dy + 2 * dx;
+                    y--;
+                }
             }
         }
     }
