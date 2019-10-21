@@ -44,7 +44,7 @@ struct tPointStructure {
 /* Global variables */
 #define PMAX 1000 /* Max # of points */
 typedef tsPoint tPointArray[PMAX];
-static tPointArray P;
+static tPointArray P, B;
 int n = 0;       /* Actual # of points */
 int ndelete = 0; /* Number deleted */
 
@@ -73,20 +73,39 @@ bool Left(tPointi a, tPointi b, tPointi c);
 int ReadPoints(void);
 void PrintPoints(void);
 
+tStack bresenham(tStack top, tPoint p1, tPoint p2);
+
 int main() {
-    tStack top;
+    //tStack top;
+    tStack bresenham_stack;
+    bresenham_stack = NULL;
+    printf("criou stack\n");
+    //n = ReadPoints();
+    //FindLowest();
+    //qsort(&P[1],           /* pointer to 1st elem */
+    //      n - 1,           /* number of elems */
+    //      sizeof(tsPoint), /* size of each elem */
+    //      Compare          /* -1,0,+1 compare function */
+    //);
 
-    n = ReadPoints();
-    FindLowest();
-    qsort(&P[1],           /* pointer to 1st elem */
-          n - 1,           /* number of elems */
-          sizeof(tsPoint), /* size of each elem */
-          Compare          /* -1,0,+1 compare function */
-    );
+    B[0].v[X] = 1;
+    B[0].v[Y] = 2;
 
-    top = Graham();
-    printf("Hull:\n");
-    PrintStack(top);
+    B[1].v[X] = 7;
+    B[1].v[Y] = 11;
+
+    tPoint a, b;
+    a = &B[0];
+    b = &B[1];
+
+    printf("executando bresenham\n");
+    bresenham_stack = bresenham(bresenham_stack, a, b);
+    printf("executou bresenham\n");
+    PrintStack(bresenham_stack);
+    printf("fim\n");
+    //top = Graham();
+    //printf("Hull:\n");
+    //PrintStack(top);
     return 0;
 }
 
@@ -176,12 +195,28 @@ tStack Push(tPoint p, tStack top) {
     s->next = top;
     return s;
 }
+
+/*---------------------------------------------------------------------
+Return pointer to stack top.
+---------------------------------------------------------------------*/
+tPoint Top(tStack top) {
+    tStack s;
+
+    NEW(s, tsStack);
+    s = Pop(top);
+    printf("popped: %d %d\n", s->p->v[X], s->p->v[Y]);  
+    tPoint popped = s->p;
+    return popped;
+}
+
 /*---------------------------------------------------------------------
 ---------------------------------------------------------------------*/
 void PrintStack(tStack t) {
     if (!t) printf("Empty stack\n");
     while (t) {
-        printf("vnum=%d\tx=%d\ty=%d\n", t->p->vnum, t->p->v[X], t->p->v[Y]);
+        //printf("vnum=%d\tx=%d\ty=%d\n", t->p->vnum, t->p->v[X], t->p->v[Y]);
+        tPoint print_point = Top(t);
+        printf("x=%d\ty=%d\n", print_point->v[X], print_point->v[Y]);
         t = t->next;
     }
 }
@@ -310,47 +345,52 @@ int AreaSign(tPointi a, tPointi b, tPointi c) {
 /*---------------------------------------------------------------------
 Bresenham algorithm for modifying O'Rourke's Graham scan
 ---------------------------------------------------------------------*/
-void bresenham(tStack top, tPointi p1, tPointi p2) {
+tStack bresenham(tStack top, tPoint p1, tPoint p2) {
+    tPoint point_insert = malloc(sizeof(tPoint));
     int dx, dy, p, x, y;
 
     /* Vertical line */
-    if(p1[X] == p2[X]) {
-        x = p1[X];
-        y = p1[Y];
-        tPointi point[X] = x;
-        tPointi point[Y] = y;
+    if(p1->v[X] == p2->v[X]) {
+        x = p1->v[X];
+        y = p1->v[Y];
+        tPoint point;
+        point->v[X] = x;
+        point->v[Y] = y;
         
 
-        if(p2[Y] >= p1[Y]) {
-            while(y <= p2[Y]) {
-                printf("(%d,%d)\n", x, y);
+        if(p2->v[Y] >= p1->v[Y]) {
+            while(y <= p2->v[Y]) {
+                point_insert->v[X] = x;
+                point_insert->v[Y] = y;
+                top = Push(point_insert, top);
                 y++;
             }
         }
 
-        if(p2[Y] < p1[Y])
-        while(y >= p2[Y]) {
-            printf("(%d,%d)\n", x, y);
+        if(p2->v[Y] < p1->v[Y])
+        while(y >= p2->v[Y]) {
+                point_insert->v[X] = x;
+                point_insert->v[Y] = y;
+                top = Push(point_insert, top);
             y--;
         }
-        return;
+        return top;
     }
 
     /* Slope less than or equal to 1 */
-    if(fabs( (p2[Y] - p1[Y]) / (p2[X] - p1[X]) ) <= 1) {
-        dx = p2[X] - p1[X];
-        dy = p2[Y] - p1[Y];
+    if(fabs( (p2->v[Y] - p1->v[Y]) / (p2->v[X] - p1->v[X]) ) <= 1) {
+        dx = p2->v[X] - p1->v[X];
+        dy = p2->v[Y] - p1->v[Y];
 
-        x = p1[X];
-        y = p1[Y];
-
-        if (p2[X] >= p1[X] && p2[Y] >= p1[Y]) {
-            tPointi point[X] = x;
-            tPointi point[Y] = y;
+        x = p1->v[X];
+        y = p1->v[Y];
+        if (p2->v[X] >= p1->v[X] && p2->v[Y] >= p1->v[Y]) {
             p = 2 * dy - dx;
-            while (x <= p2[X]) {
-                printf("(%d,%d)\n", x, y);
-                Push(point, top);
+            while (x <= p2->v[X]) {
+                point_insert->v[X] = x;
+                point_insert->v[Y] = y;
+                printf("(%d,%d)\n", point_insert->v[X], point_insert->v[Y]);
+                top = Push(point_insert, top);
                 x++;
                 if (p < 0) {
                     p = p + 2 * dy;
@@ -359,16 +399,16 @@ void bresenham(tStack top, tPointi p1, tPointi p2) {
                     y++;
                 }
             }
-            return;
+            return top;
         }
 
-        if (p2[X] >= p1[X] && p2[Y] <= p1[Y]) {
-            tPointi point[X] = x;
-            tPointi point[Y] = y;
+        if (p2->v[X] >= p1->v[X] && p2->v[Y] <= p1->v[Y]) {
             p = 2 * dy + dx;
-            while (x <= p2[X]) {
-                printf("(%d,%d)\n", x, y);
-                Push(point, top);
+            while (x <= p2->v[X]) {
+                point_insert->v[X] = x;
+                point_insert->v[Y] = y;
+                top = Push(point_insert, top);
+
                 x++;
                 if (p > 0) {
                     p = p + 2 * dy;
@@ -377,16 +417,16 @@ void bresenham(tStack top, tPointi p1, tPointi p2) {
                     y--;
                 }
             }
-            return;
+            return top;
         }
 
-        if (p2[X] <= p1[X] && p2[Y] >= p1[Y]) {
-            tPointi point[X] = x;
-            tPointi point[Y] = y;
+        if (p2->v[X] <= p1->v[X] && p2->v[Y] >= p1->v[Y]) {
             p = - 2 * dy - dx;
-            while (x >= p2[X]) {
-                printf("(%d,%d)\n", x, y);
-                Push(point, top);
+            while (x >= p2->v[X]) {
+                point_insert->v[X] = x;
+                point_insert->v[Y] = y;
+                top = Push(point_insert, top);
+
                 x--;
                 if (p > 0) {
                     p = p - 2 * dy;
@@ -395,16 +435,16 @@ void bresenham(tStack top, tPointi p1, tPointi p2) {
                     y++;
                 }
             }
-            return;
+            return top;
         }
 
-        if (p2[X] <= p1[X] && p2[Y] <= p1[Y]) {
-            tPointi point[X] = x;
-            tPointi point[Y] = y;
+        if (p2->v[X] <= p1->v[X] && p2->v[Y] <= p1->v[Y]) {
             p = dx - 2 * dy;
-            while (x >= p2[X]) {
-                printf("(%d,%d)\n", x, y);
-                Push(point, top);
+            while (x >= p2->v[X]) {
+                point_insert->v[X] = x;
+                point_insert->v[Y] = y;
+                top = Push(point_insert, top);
+
                 x--;
                 if (p < 0) {
                     p = p - 2 * dy;
@@ -413,33 +453,33 @@ void bresenham(tStack top, tPointi p1, tPointi p2) {
                     y--;
                 }
             }
-            return;
+            return top;
         }
-        return;
+        return top;
     }
 
     /* Slope bigger than 1 */
-    if(fabs( (p2[Y] - p1[Y]) / (p2[X] - p1[X]) ) > 1) {
-        int aux = p1[X];
-        p1[X] = p1[Y];
-        p1[Y] = aux;
-        aux = p2[X];
-        p2[X] = p2[Y];
-        p2[Y] = aux;
+    if(fabs( (p2->v[Y] - p1->v[Y]) / (p2->v[X] - p1->v[X]) ) > 1) {
+        int aux = p1->v[X];
+        p1->v[X] = p1->v[Y];
+        p1->v[Y] = aux;
+        aux = p2->v[X];
+        p2->v[X] = p2->v[Y];
+        p2->v[Y] = aux;
 
-        dx = p2[X] - p1[X];
-        dy = p2[Y] - p1[Y];
+        dx = p2->v[X] - p1->v[X];
+        dy = p2->v[Y] - p1->v[Y];
 
-        x = p1[X];
-        y = p1[Y];
+        x = p1->v[X];
+        y = p1->v[Y];
 
-        if (p2[X] >= p1[X] && p2[Y] >= p1[Y]) {
-            tPointi point[X] = x;
-            tPointi point[Y] = y;
+        if (p2->v[X] >= p1->v[X] && p2->v[Y] >= p1->v[Y]) {
             p = 2 * dy - dx;
-            while (x <= p2[X]) {
-                printf("21(%d,%d)\n", y, x);
-                Push(point, top);
+            while (x <= p2->v[X]) {
+                point_insert->v[X] = x;
+                point_insert->v[Y] = y;
+                top = Push(point_insert, top);
+
                 x++;
                 if (p < 0) {
                     p = p + 2 * dy;
@@ -448,15 +488,16 @@ void bresenham(tStack top, tPointi p1, tPointi p2) {
                     y++;
                 }
             }
+            return top;
         }
 
-        if (p2[X] >= p1[X] && p2[Y] <= p1[Y]) {
-            tPointi point[X] = x;
-            tPointi point[Y] = y;
+        if (p2->v[X] >= p1->v[X] && p2->v[Y] <= p1->v[Y]) {
             p = 2 * dy + dx;
-            while (x <= p2[X]) {
-                printf("22(%d,%d)\n", y, x);
-                Push(point, top);
+            while (x <= p2->v[X]) {
+                point_insert->v[X] = x;
+                point_insert->v[Y] = y;
+                top = Push(point_insert, top);
+
                 x++;
                 if (p > 0) {
                     p = p + 2 * dy;
@@ -465,15 +506,16 @@ void bresenham(tStack top, tPointi p1, tPointi p2) {
                     y--;
                 }
             }
+            return top;
         }
 
-        if (p2[X] <= p1[X] && p2[Y] >= p1[Y]) {
-            tPointi point[X] = x;
-            tPointi point[Y] = y;
+        if (p2->v[X] <= p1->v[X] && p2->v[Y] >= p1->v[Y]) {
             p = - 2 * dy - dx;
-            while (x >= p2[X]) {
-                printf("23(%d,%d)\n", y, x);
-                Push(point, top);
+            while (x >= p2->v[X]) {
+                point_insert->v[X] = x;
+                point_insert->v[Y] = y;
+                top = Push(point_insert, top);
+
                 x--;
                 if (p > 0) {
                     p = p - 2 * dy;
@@ -482,15 +524,16 @@ void bresenham(tStack top, tPointi p1, tPointi p2) {
                     y++;
                 }
             }
+            return top;
         }
 
-        if (p2[X] <= p1[X] && p2[Y] <= p1[Y]) {
-            tPointi point[X] = x;
-            tPointi point[Y] = y;
+        if (p2->v[X] <= p1->v[X] && p2->v[Y] <= p1->v[Y]) {
             p = dx - 2 * dy;
-            while (x >= p2[X]) {
-                printf("24(%d,%d)\n", y, x);
-                Push(point, top);
+            while (x >= p2->v[X]) {
+                point_insert->v[X] = x;
+                point_insert->v[Y] = y;
+                top = Push(point_insert, top);
+
                 x--;
                 if (p < 0) {
                     p = p - 2 * dy;
@@ -499,6 +542,8 @@ void bresenham(tStack top, tPointi p1, tPointi p2) {
                     y--;
                 }
             }
+            return top;
         }
     }
+    return top;
 }
