@@ -86,6 +86,7 @@ tStack bresenham(tPoint p1, tPoint p2);
 
 int main() {
     tStack top;
+    
     n = ReadPoints();
     FindLowest();
     qsort(&P[1],           /* pointer to 1st elem */
@@ -135,29 +136,34 @@ int Compare(const void *tpi, const void *tpj) {
     tPoint pi, pj;
     pi = (tPoint)tpi;
     pj = (tPoint)tpj;
-
-    a = AreaSign(P[0].v, pi->v, pj->v);
-    if (a > 0)
-        return -1;
-    else if (a < 0)
-        return 1;
-    else { /* Collinear with P[0] */
-        x = abs(pi->v[X] - P[0].v[X]) - abs(pj->v[X] - P[0].v[X]);
-        y = abs(pi->v[Y] - P[0].v[Y]) - abs(pj->v[Y] - P[0].v[Y]);
-
-        ndelete++;
-        if ((x < 0) || (y < 0)) {
-            pi->delete = TRUE;
+    tStack b_stack = NULL;
+    b_stack = bresenham(pj, pi);
+    while(b_stack->next) {
+        //a = AreaSign(P[0].v, pi->v, pj->v);
+        a = AreaSign(P[0].v, b_stack->p->v, b_stack->next->p->v);
+        b_stack = b_stack->next;
+        if (a > 0)
             return -1;
-        } else if ((x > 0) || (y > 0)) {
-            pj->delete = TRUE;
+        else if (a < 0)
             return 1;
-        } else { /* points are coincident */
-            if (pi->vnum > pj->vnum)
-                pj->delete = TRUE;
-            else
+        else { /* Collinear with P[0] */
+            x = abs(pi->v[X] - P[0].v[X]) - abs(pj->v[X] - P[0].v[X]);
+            y = abs(pi->v[Y] - P[0].v[Y]) - abs(pj->v[Y] - P[0].v[Y]);
+
+            ndelete++;
+            if ((x < 0) || (y < 0)) {
                 pi->delete = TRUE;
-            return 0;
+                return -1;
+            } else if ((x > 0) || (y > 0)) {
+                pj->delete = TRUE;
+                return 1;
+            } else { /* points are coincident */
+                if (pi->vnum > pj->vnum)
+                    pj->delete = TRUE;
+                else
+                    pi->delete = TRUE;
+                return 0;
+            }
         }
     }
 }
