@@ -20,10 +20,10 @@ not removed.
 --------------------------------------------------------------------
 */
 
-/* 
+/*
 Modified by Pedro Henrique Nieuwenhoff (10377729), using Bresenham line drawing
-algorithm to make the sorting using Compare() and Left() as a way to study Computer
-Graphics and Computational Geometry.
+algorithm to make the sorting using Compare() and Left() as a way to study
+Computer Graphics and Computational Geometry.
 
 USP-ICMC, São Carlos, 2019
 */
@@ -82,11 +82,11 @@ int ReadPoints(void);
 void PrintPoints(void);
 
 tStack bresenham(tPoint p1, tPoint p2);
-
+int CheckBresenham(tPoint p1, tPoint p2);
 
 int main() {
     tStack top;
-    
+
     n = ReadPoints();
     FindLowest();
     qsort(&P[1],           /* pointer to 1st elem */
@@ -94,6 +94,12 @@ int main() {
           sizeof(tsPoint), /* size of each elem */
           Compare          /* -1,0,+1 compare function */
     );
+    printf("After sorting, ndelete = %d:\n", ndelete);
+    PrintPoints();
+    if (ndelete > 0) {
+        Squash();
+        printf("After squashing:\n");
+    }
 
     top = Graham();
     printf("Hull:\n");
@@ -126,6 +132,26 @@ void Swap(int i, int j) {
     SWAP(temp, P[i].v[Y], P[j].v[Y]);
     SWAP(temp, P[i].delete, P[j].delete);
 }
+
+/* Check if the points are collinear */
+int CheckBresenham(tPoint p1, tPoint p2) {
+    tStack b_stack = NULL;
+    b_stack = bresenham(&P[0], p1);
+    while (b_stack) {
+        if (b_stack->p->v[X] == p2->v[X] && b_stack->p->v[Y] == p2->v[Y])
+            return 1;
+        b_stack = b_stack->next;
+    }
+
+    tStack b_stack2 = NULL;
+    b_stack2 = bresenham(&P[0], p2);
+    while (b_stack2) {
+        if (b_stack2->p->v[X] == p1->v[X] && b_stack2->p->v[Y] == p1->v[Y])
+            return 1;
+        b_stack2 = b_stack2->next;
+    }
+}
+
 /*---------------------------------------------------------------------
 Compare: returns -1,0,+1 if p1 < p2, =, or > respectively;
 here "<" means smaller angle.  Follows the conventions of qsort.
@@ -137,33 +163,41 @@ int Compare(const void *tpi, const void *tpj) {
     pi = (tPoint)tpi;
     pj = (tPoint)tpj;
     tStack b_stack = NULL;
-    b_stack = bresenham(pj, pi);
-    while(b_stack->next) {
-        //a = AreaSign(P[0].v, pi->v, pj->v);
-        a = AreaSign(P[0].v, b_stack->p->v, b_stack->next->p->v);
-        b_stack = b_stack->next;
-        if (a > 0)
-            return -1;
-        else if (a < 0)
-            return 1;
-        else { /* Collinear with P[0] */
-            x = abs(pi->v[X] - P[0].v[X]) - abs(pj->v[X] - P[0].v[X]);
-            y = abs(pi->v[Y] - P[0].v[Y]) - abs(pj->v[Y] - P[0].v[Y]);
+    b_stack = bresenham(&P[0], pi);
+    int countR = 0, countL = 0, check = 0;
+    check = CheckBresenham(pi, pj);
 
-            ndelete++;
-            if ((x < 0) || (y < 0)) {
-                pi->delete = TRUE;
-                return -1;
-            } else if ((x > 0) || (y > 0)) {
+    while (b_stack) {
+        a = AreaSign(P[0].v, b_stack->p->v, pj->v);
+        if (a > 0)
+            countL++;
+        else
+            countR++;
+
+        b_stack = b_stack->next;
+    }
+    // if (a > 0)
+    if (countL > countR && check == 0) return -1;
+    // else if (a < 0)
+    else if (countL < countR && check == 0)
+        return 1;
+    else { /* Collinear with P[0] */
+        x = abs(pi->v[X] - P[0].v[X]) - abs(pj->v[X] - P[0].v[X]);
+        y = abs(pi->v[Y] - P[0].v[Y]) - abs(pj->v[Y] - P[0].v[Y]);
+
+        ndelete++;
+        if ((x < 0) || (y < 0)) {
+            pi->delete = TRUE;
+            return -1;
+        } else if ((x > 0) || (y > 0)) {
+            pj->delete = TRUE;
+            return 1;
+        } else { /* points are coincident */
+            if (pi->vnum > pj->vnum)
                 pj->delete = TRUE;
-                return 1;
-            } else { /* points are coincident */
-                if (pi->vnum > pj->vnum)
-                    pj->delete = TRUE;
-                else
-                    pi->delete = TRUE;
-                return 0;
-            }
+            else
+                pi->delete = TRUE;
+            return 0;
         }
     }
 }
@@ -218,33 +252,36 @@ tStack Graham() {
 
     /* Bottom two elements will never be removed. */
     i = 2;
-    
+
     while (i < n) {
-        //printf("j-> %d i->%d\n", j, i);
+        // printf("j-> %d i->%d\n", j, i);
         tStack b_stack = NULL;
         b_stack = bresenham(top->next->p, top->p);
-        //printf("bresenham:\n");
-        //PrintStack(b_stack);
+        // printf("bresenham:\n");
+        // PrintStack(b_stack);
         if (!top->next) printf("Error\n"), exit(EXIT_FAILURE);
-        
-        while(b_stack->next) {
-            //printf("(%d,%d) with (%d,%d) (%d,%d)\n", P[i].v[X], P[i].v[Y], b_stack->next->p->v[X], b_stack->next->p->v[Y], b_stack->p->v[X], b_stack->p->v[Y]);
+
+        while (b_stack->next) {
+            // printf("(%d,%d) with (%d,%d) (%d,%d)\n", P[i].v[X], P[i].v[Y],
+            // b_stack->next->p->v[X], b_stack->next->p->v[Y], b_stack->p->v[X],
+            // b_stack->p->v[Y]);
             if (!Left(b_stack->next->p->v, b_stack->p->v, P[i].v)) {
                 checkR++;
-            } else checkL++;
+            } else
+                checkL++;
             b_stack = b_stack->next;
-            //printf("i: %d checkR: %d checkL: %d\n", i, checkR, checkL);
+            // printf("i: %d checkR: %d checkL: %d\n", i, checkR, checkL);
         }
 
         if (checkL > checkR) {
-            //printf("pushou (%d,%d)\n", P[i].v[X], P[i].v[Y]);
+            // printf("pushou (%d,%d)\n", P[i].v[X], P[i].v[Y]);
             top = Push(&P[i], top);
-            //printf("top atual: (%d,%d)\n", top->p->v[X], top->p->v[Y]);
+            // printf("top atual: (%d,%d)\n", top->p->v[X], top->p->v[Y]);
             i++;
         } else {
-            //printf("poppou (%d,%d)\n", top->p->v[X], top->p->v[Y]);
+            // printf("poppou (%d,%d)\n", top->p->v[X], top->p->v[Y]);
             top = Pop(top);
-            //printf("top atual: (%d,%d)\n", top->p->v[X], top->p->v[Y]);
+            // printf("top atual: (%d,%d)\n", top->p->v[X], top->p->v[Y]);
         }
         checkR = 0;
         checkL = 0;
@@ -355,15 +392,15 @@ tStack bresenham(tPoint p1, tPoint p2) {
     int dx, dy, p, x, y;
 
     /* Vertical line */
-    if(p1->v[X] == p2->v[X]) {
+    if (p1->v[X] == p2->v[X]) {
         x = p1->v[X];
         y = p1->v[Y];
-        tPoint point;
-        point->v[X] = x;
-        point->v[Y] = y;
-        
-        if(p2->v[Y] >= p1->v[Y]) {
-            while(y <= p2->v[Y]) {
+        // tPoint point;
+        // point->v[X] = x;
+        // point->v[Y] = y;
+
+        if (p2->v[Y] >= p1->v[Y]) {
+            while (y <= p2->v[Y]) {
                 tPoint point_insert = malloc(sizeof(tPoint));
                 point_insert->v[X] = x;
                 point_insert->v[Y] = y;
@@ -372,19 +409,19 @@ tStack bresenham(tPoint p1, tPoint p2) {
             }
         }
 
-        if(p2->v[Y] < p1->v[Y])
-        while(y >= p2->v[Y]) {
+        if (p2->v[Y] < p1->v[Y])
+            while (y >= p2->v[Y]) {
                 tPoint point_insert = malloc(sizeof(tPoint));
                 point_insert->v[X] = x;
                 point_insert->v[Y] = y;
                 top = Push(point_insert, top);
-            y--;
-        }
+                y--;
+            }
         return top;
     }
 
     /* Slope less than or equal to 1 */
-    if(fabs( (p2->v[Y] - p1->v[Y]) / (p2->v[X] - p1->v[X]) ) <= 1) {
+    if (fabs((p2->v[Y] - p1->v[Y]) / (p2->v[X] - p1->v[X])) <= 1) {
         dx = p2->v[X] - p1->v[X];
         dy = p2->v[Y] - p1->v[Y];
         x = p1->v[X];
@@ -407,7 +444,7 @@ tStack bresenham(tPoint p1, tPoint p2) {
                     y++;
                 }
             }
-            
+
             return top;
         }
 
@@ -431,7 +468,7 @@ tStack bresenham(tPoint p1, tPoint p2) {
         }
 
         if (p2->v[X] <= p1->v[X] && p2->v[Y] >= p1->v[Y]) {
-            p = - 2 * dy - dx;
+            p = -2 * dy - dx;
             while (x >= p2->v[X]) {
                 tPoint point_insert = malloc(sizeof(tPoint));
                 point_insert->v[X] = x;
@@ -471,7 +508,7 @@ tStack bresenham(tPoint p1, tPoint p2) {
     }
 
     /* Slope bigger than 1 */
-    if(fabs( (p2->v[Y] - p1->v[Y]) / (p2->v[X] - p1->v[X]) ) > 1) {
+    if (fabs((p2->v[Y] - p1->v[Y]) / (p2->v[X] - p1->v[X])) > 1) {
         int aux = p1->v[X];
         p1->v[X] = p1->v[Y];
         p1->v[Y] = aux;
@@ -539,7 +576,7 @@ tStack bresenham(tPoint p1, tPoint p2) {
         }
 
         if (p2->v[X] <= p1->v[X] && p2->v[Y] >= p1->v[Y]) {
-            p = - 2 * dy - dx;
+            p = -2 * dy - dx;
             while (x >= p2->v[X]) {
                 tPoint point_insert = malloc(sizeof(tPoint));
                 point_insert->v[X] = y;
